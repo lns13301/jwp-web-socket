@@ -8,6 +8,7 @@ import com.websocket.lns13301.message.MessageRequest;
 import com.websocket.lns13301.message.MessageResponse;
 import com.websocket.lns13301.message.SessionRequest;
 import com.websocket.lns13301.message.SessionResponse;
+import com.websocket.lns13301.message.UserResponse;
 import com.websocket.lns13301.repository.RoomRepository;
 import com.websocket.lns13301.repository.UserRepository;
 import io.restassured.RestAssured;
@@ -74,7 +75,8 @@ public class WebSocketChattingTest {
     void enterUserAndBroadCastMessage() throws InterruptedException, ExecutionException, TimeoutException {
         Room room = roomRepository.findAll().get(0);
         User user = userRepository.findAll().get(0);
-        MessageResponse expected = new MessageResponse(user.getId(), "채팅을 보내 봅니다.");
+        UserResponse expectedUser = UserResponse.from(user);
+        MessageResponse expectedMessage = new MessageResponse(user.getId(), "채팅을 보내 봅니다.");
 
         // Settings
         WebSocketStompClient webSocketStompClient = 웹_소켓_STOMP_CLIENT();
@@ -92,10 +94,12 @@ public class WebSocketChattingTest {
         stompSession.subscribe(String.format("/sub/rooms/%s/chat", room.getId()), new StompFrameHandlerImpl(new MessageResponse(), messages));
         stompSession.send(String.format("/sub/rooms/%s/chat", room.getId()), new MessageRequest(user.getId(), "채팅을 보내 봅니다."));
 
-        MessageResponse response = messages.poll(5, TimeUnit.SECONDS);
+        SessionResponse sessionResponse = users.poll(5, TimeUnit.SECONDS);
+        MessageResponse messageResponse = messages.poll(5, TimeUnit.SECONDS);
 
         // Then
-        assertThat(response).usingRecursiveComparison().isEqualTo(expected);
+        assertThat(sessionResponse.getUserResponses().get(0)).usingRecursiveComparison().isEqualTo(expectedUser);
+        assertThat(messageResponse).usingRecursiveComparison().isEqualTo(expectedMessage);
     }
 
     private WebSocketStompClient 웹_소켓_STOMP_CLIENT() {
