@@ -18,7 +18,7 @@ import org.springframework.http.HttpStatus;
 public class WebSocketConnectTest {
 
     @LocalServerPort
-    protected int port;
+    private int port;
 
     @BeforeEach
     public void setUp() {

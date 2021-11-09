@@ -11,7 +11,6 @@ import com.websocket.lns13301.message.SessionResponse;
 import com.websocket.lns13301.repository.RoomRepository;
 import com.websocket.lns13301.repository.UserRepository;
 import io.restassured.RestAssured;
-import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -27,8 +26,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
-import org.springframework.messaging.simp.stomp.StompFrameHandler;
-import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
 import org.springframework.util.concurrent.ListenableFuture;
@@ -42,7 +39,7 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 public class WebSocketChattingTest {
 
     @LocalServerPort
-    protected int port;
+    private int port;
     private BlockingQueue<SessionResponse> users;
     private BlockingQueue<MessageResponse> messages;
     @Autowired
@@ -81,8 +78,7 @@ public class WebSocketChattingTest {
 
         // Settings
         WebSocketStompClient webSocketStompClient = 웹_소켓_STOMP_CLIENT();
-        // StringMessageConverter, SimpleMessageConverter 등 여러 MessageConverter 구현체가 있다.
-        webSocketStompClient.setMessageConverter(new MappingJackson2MessageConverter()); // 제이슨을 지원한다.
+        webSocketStompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
         // Connection
         ListenableFuture<StompSession> connect = webSocketStompClient
@@ -90,34 +86,10 @@ public class WebSocketChattingTest {
             });
         StompSession stompSession = connect.get(60, TimeUnit.SECONDS);
 
-        // Join Room
-        stompSession.subscribe(String.format("/sub/rooms/%s", room.getId()), new StompFrameHandler() {
-            @Override
-            public Type getPayloadType(final StompHeaders headers) {
-                return SessionResponse.class;
-            }
-
-            @Override
-            public void handleFrame(final StompHeaders headers, final Object payload) {
-                System.out.println(payload);
-                users.offer((SessionResponse) payload);
-            }
-        });
+        stompSession.subscribe(String.format("/sub/rooms/%s", room.getId()), new StompFrameHandlerImpl(new SessionResponse(), users));
         stompSession.send(String.format("/pub/rooms/%s", room.getId()), new SessionRequest(user.getId(), "1A2B3C4D"));
 
-        // Send Chat
-        stompSession.subscribe(String.format("/sub/rooms/%s/chat", room.getId()), new StompFrameHandler() {
-            @Override
-            public Type getPayloadType(final StompHeaders headers) {
-                return MessageResponse.class;
-            }
-
-            @Override
-            public void handleFrame(final StompHeaders headers, final Object payload) {
-                System.out.println(payload);
-                messages.offer((MessageResponse) payload);
-            }
-        });
+        stompSession.subscribe(String.format("/sub/rooms/%s/chat", room.getId()), new StompFrameHandlerImpl(new MessageResponse(), messages));
         stompSession.send(String.format("/sub/rooms/%s/chat", room.getId()), new MessageRequest(user.getId(), "채팅을 보내 봅니다."));
 
         MessageResponse response = messages.poll(5, TimeUnit.SECONDS);

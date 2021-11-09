@@ -1,10 +1,12 @@
 package com.websocket.lns13301.config;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 @Configuration
 @EnableWebSocketMessageBroker // 웹 소켓 메시지 처리 활성화
@@ -23,5 +25,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws-connection") // 클라이언트가 웹 소켓 요청을 하고 싶을 때 해당 End point 로 요청을 보낸다.
             .setAllowedOrigins("*")
             .withSockJS(); // fallback
+    }
+
+    @EventListener
+    public void onDisconnectEvent(final SessionDisconnectEvent event) {
+        System.out.println("종료 감지 : " + event.toString());
     }
 }

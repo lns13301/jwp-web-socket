@@ -71,6 +71,4 @@ class ChatServiceTest {
 
         return sessionRepository.save(session);
     }
-
-    
 }

@@ -1,13 +1,16 @@
 package com.websocket.lns13301;
 
+import com.websocket.lns13301.message.DummyResponse;
 import com.websocket.lns13301.message.ExitResponse;
 import com.websocket.lns13301.message.MessageRequest;
 import com.websocket.lns13301.message.SessionRequest;
 import org.springframework.context.event.EventListener;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 @Controller
@@ -35,5 +38,11 @@ public class ChatController {
     public void exit(final SessionDisconnectEvent event) {
         ExitResponse response = chatService.exit(event.getSessionId());
         template.convertAndSend("/sub/rooms/" + response.getRoomId(), response.getSessionResponse());
+    }
+
+    @PostMapping("/dummy")
+    public ResponseEntity<DummyResponse> createDummyRoomAndUser() {
+        DummyResponse response = chatService.createDummy();
+        return ResponseEntity.ok(response);
     }
 }

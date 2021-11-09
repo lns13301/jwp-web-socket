@@ -16,9 +16,9 @@ public class SessionResponse {
 
     private List<UserResponse> userResponses;
 
-    public static SessionResponse of(final List<User> users) {
+    public static SessionResponse from(final List<User> users) {
         return new SessionResponse(users.stream()
-            .map(user -> new UserResponse(user.getId(), user.getName()))
+            .map(UserResponse::from)
             .collect(Collectors.toList()));
     }
 }
